@@ -20,5 +20,6 @@ Step 3
 run the app of Front
 
 Step 4
-in the console go to the chat directory and use this command nodejs sever.js
+in the console go to the chat directory and use this command:
+   > nodejs sever.js
 
