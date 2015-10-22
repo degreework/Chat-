@@ -3,6 +3,7 @@ app in nodejs for the chat in aplication
 
 ______________________
 ###Requeriments
+    *sudo apt-get install mongodb mongodb-clients mongodb-server
     *sudo apt-get install nodejs
     *sudo apt-get install npm
     *npm install express
@@ -12,18 +13,15 @@ ______________________
 
 ###How to use 
 Step 1
-install nodejs and mongo
-
-Step 2
 Install Requeriments 
 
-Step 3
+Step 2
 run the app of Services 
 
-Step 4 
+Step 3 
 run the app of Front
 
-Step 5
+Step 4
 in the console go to the chat directory and use this command:
    > nodejs server.js
 
