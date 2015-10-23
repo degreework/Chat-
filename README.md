@@ -16,12 +16,15 @@ Step 1
 Install Requeriments 
 
 Step 2
+create a database in mongo called chat
+
+Step 3
 run the app of Services 
 
-Step 3 
+Step 4 
 run the app of Front
 
-Step 4
+Step 5
 in the console go to the chat directory and use this command:
    > nodejs server.js
 
