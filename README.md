@@ -3,11 +3,13 @@ app in nodejs for the chat in aplication
 
 ______________________
 ###Requeriments
+    *sudo apt-get install mongodb mongodb-clients mongodb-server
     *sudo apt-get install nodejs
     *sudo apt-get install npm
     *npm install express
     *npm install socket.io
     *npm install underscore
+    *npm install mongoose
 
 ###How to use 
 Step 1
