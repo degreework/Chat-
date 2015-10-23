@@ -1,94 +1,198 @@
-//	Customization
 
+// puerto del servidor
 var appPort = 4000;
 
-// Librairies
-
+// Librerias necesarias
 var express = require('express'), app = express();
 var http = require('http')
   , server = http.createServer(app)
+  ,	mongoose = require('mongoose')
   , io = require('socket.io').listen(server);
 
 var _ = require('underscore');
 
 
+// variables en el servidor 
+var pseudoArray = []; 
 
 
-//var jade = require('jade');
-//var io = require('socket.io').listen(app);
-var pseudoArray = []; //block the admin username (you can disable it)
-var chatHistory = {};
+//app.use(express.static(__dirname + '/public'));
 
-// Views Options
-/*
-app.set('views', __dirname + '/views');
-app.set('view engine', 'jade');
-app.set("view options", { layout: false });
-*/
-app.use(express.static(__dirname + '/public'));
+//mongoose
+var Schema = mongoose.Schema;
 
-// Render and send the main page
-/*
-app.get('/', function(req, res){
-  res.render('home.jade');
-});*/
+// declaro los esquemas 
+var MessageSchema = new Schema({
+  room_id: { type: String, index: true },
+  nameSender:  String,
+  message: String,
+  date: Date,
+  from: Number,
+  thumb: String
+});
+
+var MessageAllSchema = new Schema({
+  nameSender:  String,
+  message: String,
+  date: Date,
+  from: Number,
+  thumb: String
+});
+
+var RoomSchema = new Schema({
+  room_id : { type: String, index: {unique: true} }
+});
+
+// asigno los esquemas a la bd
+mongoose.model('Message', MessageSchema);
+mongoose.model('MessageAll', MessageSchema);
+mongoose.model('Room', RoomSchema);
+
+// conecto a la bd mongo
+mongoose.connect('mongodb://localhost/chat');
+
+// traigo los modelos 
+var Message = mongoose.model('Message');
+var MessageAll = mongoose.model('MessageAll');
+var Room = mongoose.model('Room');
+
+// escucha del servidor 
 server.listen(appPort);
-// app.listen(appPort);
 console.log("Server listening on port " + appPort);
 
-// Handle the socket.io connections
 
-//var users = 0; //count the users
-
+// maneja las conecciones que se hacen a traves de socket.io 
 io.sockets.on('connection', function (socket) { // First connection
 	
-	chatHistory['all'] = [];
+	// cuando mandan un mensaje al chat global, lo envia a todos
+	socket.on('messageAll', function (data) { 
 
 
-	socket.on('messageAll', function (data) { // broadcast the message to all		
-
-		var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data};
-		socket.broadcast.emit('messageAll', transmit);
-		if (_.size(chatHistory['all']) > 10) {
-			chatHistory['all'].splice(0,1);
-		} else {
-			chatHistory['all'].push(transmit);
-		}
-
-		console.log(chatHistory['all'])
+		// datos a enviar 
+		fecha = new Date().toISOString()
+		var transmit = {date : fecha, pseudo : socket.nickname, message : data, thumb: socket.thumb};
 		
+		// se crea y guarda el mensaje en la bd de mongo
+		/*var mensaje = new MessageAll();
+		mensaje.nameSender = socket.nickname
+		mensaje.message = data
+		mensaje.date =	fecha
+		mensaje.from = socket.room
+		mensaje.thumb = socket.thumb
+
+		mensaje.save(function(err) {
+		  if (err) throw err;
+
+		  console.log('Message created!');
+		});*/
+
+		// se envia a todos los usuarios
+		socket.broadcast.emit('messageAll', transmit);
 
 	});
-	socket.on('message', function (data) { // p2p the message 
+	// cuando mandan un mensajes individual (p2p), lo envia al usuario con el que chatea 
+	socket.on('message', function (data) { 
 		
-			var transmit = {date : new Date().toISOString(), pseudo : socket.nickname, message : data.msg, to: socket.room};
-			//socket.broadcast.emit('message', transmit);
+			//console.log(data)
+			// se acomoda el identificador del room 
+			var id_room = data.ids.split(',').sort().toString()
+			
+			// se verifica si la room existe o no en la bd de mongo, si no, crea la room 
+			/*Room.find({ room_id: id_room }, function(err, room) {
+			  if (err) throw err;
+
+			  // object of the user
+			  console.log(room);
+
+			  if (room.length === 0) {
+				var hall = new Room();
+				hall.room_id = id_room
+				hall.save(function(err) {
+				  if (err) throw err;
+
+				  console.log('Room created!');
+				});
+			};
+
+			});*/
+
+			//console.log(socket.room)
+			fecha = new Date().toISOString()
+			// datos a enviar 
+			var transmit = {date : fecha, pseudo : socket.nickname, message : data.msg, from: socket.room, thumb: socket.thumb, to: data.to};
+			
+			// se crea y guarda el mensaje en la bd de mongo
+			/*var mensaje = new Message();
+			mensaje.room_id = id_room
+			mensaje.nameSender = socket.nickname
+			mensaje.message = data.msg
+			mensaje.date =	fecha
+			mensaje.from = socket.room
+			mensaje.thumb = socket.thumb
+
+			mensaje.save(function(err) {
+			  if (err) throw err;
+
+			  console.log('Message created!');
+			})*/;
+
+			//se envia al usuario con el que se chatea 
 			io.to(data.to).emit('message', transmit);
-			console.log("user "+ transmit['pseudo'] +" said \""+transmit['message']+"\"");
+			
+			//console.log("user "+ transmit['pseudo'] +" said \""+transmit['message']+"\"");
 			console.log("user send the msg");
 	});
-	socket.on('addUser', function (data) { // set to the users log
+	
+	// Cuando un usuario se loguea en la app lo agrega al chat 
+	socket.on('addUser', function (data) { 
 			
-			console.log('addUser')
-			console.log(data)
+			//console.log('addUser')
+			//console.log(data)
 			pseudoArray.push(data);
 			console.log("user connected and add to the list");
 			
 			socket.nickname = data.first_name+' '+data.last_name
-			socket.room = data.id	
+			socket.room = data.id
+			socket.thumb = data.thumb
 			socket.join(data.id);
 			reloadUsers();
+			send_History_Chat_All(socket.room)
+
 		
 	});
-	socket.on('listChatUpdate', function (data) { // Broadcast the message to all
+	
+	// Mantiene la lista de usuarios actualizada 
+	socket.on('listChatUpdate', function (data) { 
 		console.log('listChat')
 		socket.nickname = data.first_name+' '+data.last_name
 		socket.room = data.id	
+		socket.thumb = data.thumb
 		socket.join(data.id);
 		reloadUsers(); // Send the count to all the users
+		send_History_Chat_All(socket.room)
 		
 	});
-	socket.on('leave', function (data) { // Disconnection of the client		
+	
+	// pide el hisorial de una o varias conversacion en especifico 
+	socket.on('chat_history', function (data) { 
+		
+		var id_room = data.room.split(',').sort().toString()
+		Message.find({room_id:id_room}, function(err, messages) {
+		  if (err) throw err;
+
+		  // object of all the users
+		  console.log('historial de la conversacion')
+		  console.log(messages)
+		  
+		  io.to(data.from).emit('chat_history', messages, data.from, data.to);
+
+		});
+
+
+	});
+	
+	// Cuando un usuario se sale de la aplicacion lo saca del chat 
+	socket.on('leave', function (data) { 
 		
 			console.log("leave...")
 
@@ -106,16 +210,23 @@ io.sockets.on('connection', function (socket) { // First connection
 	});
 });
 
-function reloadUsers() { // Send the count of the users to all
+//funcion que envia el array con los usuarios actuales al front 
+function reloadUsers() { 
 	io.sockets.emit('nbUsers', pseudoArray);
 }
 
-/*
-//
-delete chatHistory[room.name]
-chatHistory[socket.room] = [];
-if (_.size(chatHistory[socket.room]) > 10) {
-					chatHistory[socket.room].splice(0,1);
-				} else {
-					chatHistory[socket.room].push(people[socket.id].name + ": " + msg);
-				}*/
+// funcion que consulta el historial del chat global y envia los mensajes al front 
+function send_History_Chat_All(my_id){
+
+	MessageAll.find({}, function(err, messages) {
+	  if (err) throw err;
+
+	  // object of all the users
+	  //console.log('historial chat global')
+	  //console.log(messages)
+	  //io.sockets.emit('send_History_Chat_All', messages);
+	  io.to(my_id).emit('send_History_Chat_All', messages);
+
+	});
+}
+
