@@ -2,13 +2,17 @@
   "name":"chat",
   "node":"0.6.12",
   "author":"geekuillaume",
+  "repository": {
+    "type": "git",
+    "url": "git:github.com/degreeworkunivalle/Chat-.git"
+  },
   "dependencies": {
-  	"socket.io": "1.3.4",
-    "underscore":"1.8.3",
-  	"express": "4.12.0",
-    "mongoose": "4.1.12"
-  	  },
+    "socket.io": "~1.3.4",
+    "underscore": "~1.8.3",
+    "express": "~4.12.0",
+    "mongoose": "~4.1.12"
+    },
   "scripts": {
-  	"start": "node server.js"
+    "start": "node server.js"
   }
 }
