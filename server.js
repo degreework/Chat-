@@ -73,7 +73,7 @@ io.sockets.on('connection', function (socket) { // First connection
 		var transmit = {date : fecha, pseudo : socket.nickname, message : data, thumb: socket.thumb};
 		
 		// se crea y guarda el mensaje en la bd de mongo
-		/*var mensaje = new MessageAll();
+		var mensaje = new MessageAll();
 		mensaje.nameSender = socket.nickname
 		mensaje.message = data
 		mensaje.date =	fecha
@@ -84,7 +84,7 @@ io.sockets.on('connection', function (socket) { // First connection
 		  if (err) throw err;
 
 		  console.log('Message created!');
-		});*/
+		});
 
 		// se envia a todos los usuarios
 		socket.broadcast.emit('messageAll', transmit);
@@ -98,7 +98,7 @@ io.sockets.on('connection', function (socket) { // First connection
 			var id_room = data.ids.split(',').sort().toString()
 			
 			// se verifica si la room existe o no en la bd de mongo, si no, crea la room 
-			/*Room.find({ room_id: id_room }, function(err, room) {
+			Room.find({ room_id: id_room }, function(err, room) {
 			  if (err) throw err;
 
 			  // object of the user
@@ -114,7 +114,7 @@ io.sockets.on('connection', function (socket) { // First connection
 				});
 			};
 
-			});*/
+			});
 
 			//console.log(socket.room)
 			fecha = new Date().toISOString()
@@ -122,7 +122,7 @@ io.sockets.on('connection', function (socket) { // First connection
 			var transmit = {date : fecha, pseudo : socket.nickname, message : data.msg, from: socket.room, thumb: socket.thumb, to: data.to};
 			
 			// se crea y guarda el mensaje en la bd de mongo
-			/*var mensaje = new Message();
+			var mensaje = new Message();
 			mensaje.room_id = id_room
 			mensaje.nameSender = socket.nickname
 			mensaje.message = data.msg
@@ -134,9 +134,10 @@ io.sockets.on('connection', function (socket) { // First connection
 			  if (err) throw err;
 
 			  console.log('Message created!');
-			})*/;
+			});
 
 			//se envia al usuario con el que se chatea 
+			console.log(data.to)
 			io.to(data.to).emit('message', transmit);
 			
 			//console.log("user "+ transmit['pseudo'] +" said \""+transmit['message']+"\"");
